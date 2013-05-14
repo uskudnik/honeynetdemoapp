@@ -23,19 +23,10 @@ var imax = 10;
 
 var identify_components_re = "([A-Z]{1}[a-z]{1,} [0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}) ([a-zA-Z]+) ([^:]+):(.+)";
 
-var re = new RegExp(identify_components_re);
-
 function syslog_parser(line) {
     var components = line.match(identify_components_re);
     var data_elements = components.slice(1,components.length);
-
-    // var date = data_elements[0]
-    // var username = data_elements[1]
-    // var process = data_elements[2]
-    // var message = data_elements[3]
-
-    data_elements[0] = new Date(data_elements[0])
-
+    data_elements[0] = new Date(data_elements[0]);
     return data_elements;
 }
 
@@ -44,25 +35,36 @@ function randomInt(min, max) {
 }
 
 function data_generator() {
-    setTimeout(function(){
-    // console.log("foo: ",
-    //     );
-
-    var d = sample_syslog_data[randomInt(0, sample_syslog_data.length)];
-    
-    // console.log(new Date())
-
-    // console.log(sample_syslog_data.length, randomInt(0, sample_syslog_data.length));
-
-    console.log(syslog_parser(d));
-
-    imax--;
-    if (imax > 0)
-        data_generator();
-    }, Math.random() * (rmax - rmin) + rmin);
+    return sample_syslog_data[randomInt(0, sample_syslog_data.length)];
 }
 
-data_generator();
+syslogFetcher = function(settings) {
+    // $.ajax, remote request, probably best with websockets?
+    if (typeof settings.repeat === 'number') {
+        settings.success(data_generator());
+        setTimeout(function(){
+            // dbg stuff; lets limit this to 10 interations
+            imax--;
+            if (imax > 0) {
+                syslogFetcher(settings)
+            }
+        }, settings.repeat); // random: Math.random() * (rmax - rmin) + rmin
+    } else {
+        settings.success(data_generator());
+    }
+}
+
+syslogFetcher({
+    urls: ['one', 'two', 'three'],
+    success: show_in_table,
+    repeat: 500,
+});
+
+function show_in_table(data) {
+    
+}
+
+
 
 </script>
 </head>
