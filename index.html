@@ -23,12 +23,6 @@ var imax = 10;
 
 var identify_components_re = "([A-Z]{1}[a-z]{1,} [0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}) ([a-zA-Z]+) ([^:]+):(.+)";
 
-function syslog_parser(line) {
-    var components = line.match(identify_components_re);
-    var data_elements = components.slice(1,components.length);
-    data_elements[0] = new Date(data_elements[0]);
-    return data_elements;
-}
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
@@ -38,37 +32,77 @@ function data_generator() {
     return sample_syslog_data[randomInt(0, sample_syslog_data.length)];
 }
 
-syslogFetcher = function(settings) {
-    // $.ajax, remote request, probably best with websockets?
+function syslogFetcher(settings) {
+    // $.ajax, remote request, probably best with websockets
+    this.parser = function(data) {
+        var components = data.match(identify_components_re);
+        var data_elements = components.slice(1,components.length);
+        
+        return {
+            date: new Date(data_elements[0]),
+            user: data_elements[1],
+            process: data_elements[2],
+            message: data_elements[3],
+
+        };
+    }
+
+    var data = this.parser(data_generator());
+
     if (typeof settings.repeat === 'number') {
-        settings.success(data_generator());
+        settings.success(data);
         setTimeout(function(){
             // dbg stuff; lets limit this to 10 interations
-            imax--;
-            if (imax > 0) {
-                syslogFetcher(settings)
-            }
+            // imax--;
+            // if (imax > 0) {
+            //     syslogFetcher(settings)
+            // }
+
+            syslogFetcher(settings)
         }, settings.repeat); // random: Math.random() * (rmax - rmin) + rmin
     } else {
-        settings.success(data_generator());
+        settings.success(data);
     }
 }
 
-syslogFetcher({
+syslogFetcher.prototype.parser = function(data) {
+    var components = data.match(identify_components_re);
+    var data_elements = components.slice(1,components.length);
+    
+    return Object({
+        date: new Date(data_elements[0]),
+        user: data_elements[1],
+        process: data_elements[2],
+        message: data_elements[3],
+
+    });
+}
+
+var slf = new syslogFetcher({
     urls: ['one', 'two', 'three'],
     success: show_in_table,
     repeat: 500,
 });
 
 function show_in_table(data) {
-    
+    var tmpl = function(data) {
+        return $("<tr><td>"+data.date+"</td><td>"+data.user+"</td><td>"+data.process+"</td><td>"+data.message+"</td></tr>");
+    };
+
+    tmpl(data).insertAfter($("table tr:last"));
 }
-
-
 
 </script>
 </head>
 <body>
 
+<table>
+<tr>
+    <th>Date and Time</th>
+    <th>User</th>
+    <th>Process</th>
+    <th>Message</th>
+</tr>
+</table>
 </body>
 </html>
