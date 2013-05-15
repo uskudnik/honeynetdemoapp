@@ -34,7 +34,7 @@ function data_generator() {
 
 function syslogFetcher(settings) {
     // $.ajax, remote request, probably best with websockets
-    this.parser = function(data) {
+    var parser = function(data) {
         var components = data.match(identify_components_re);
         var data_elements = components.slice(1,components.length);
         
@@ -47,7 +47,7 @@ function syslogFetcher(settings) {
         };
     }
 
-    var data = this.parser(data_generator());
+    var data = parser(data_generator());
 
     if (typeof settings.repeat === 'number') {
         settings.success(data);
@@ -63,19 +63,6 @@ function syslogFetcher(settings) {
     } else {
         settings.success(data);
     }
-}
-
-syslogFetcher.prototype.parser = function(data) {
-    var components = data.match(identify_components_re);
-    var data_elements = components.slice(1,components.length);
-    
-    return Object({
-        date: new Date(data_elements[0]),
-        user: data_elements[1],
-        process: data_elements[2],
-        message: data_elements[3],
-
-    });
 }
 
 var slf = new syslogFetcher({
