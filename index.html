@@ -16,13 +16,14 @@ sample_syslog_data = [
 ]
 
 
-var rmax = 1500;
+var rmax = 15;
 var rmin = 10;
 
 var imax = 10;
 
 var identify_components_re = "([A-Z]{1}[a-z]{1,} [0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}) ([a-zA-Z]+) ([^:]+):(.+)";
 
+cacheArray = new Array(); cacheSize = 100;
 
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
@@ -34,6 +35,7 @@ function data_generator() {
 
 function syslogFetcher(settings) {
     // $.ajax, remote request, probably best with websockets
+
     var parser = function(data) {
         var components = data.match(identify_components_re);
         var data_elements = components.slice(1,components.length);
@@ -67,8 +69,8 @@ function syslogFetcher(settings) {
 
 var slf = new syslogFetcher({
     urls: ['one', 'two', 'three'],
-    success: show_in_table,
-    repeat: 500,
+    success: show_in_table_fast,
+    repeat: 5,
 });
 
 function show_in_table(data) {
@@ -79,17 +81,29 @@ function show_in_table(data) {
     tmpl(data).insertAfter($("table tr:last"));
 }
 
+function show_in_table_fast(data) {
+    // Array.push returns length
+    console.log(cacheArray)
+    if (cacheArray.push(data) > cacheSize) {
+        var tmpl_fragment = document.createDocumentFragment();
+        while (cacheArray.length) {
+            var data = cacheArray.pop();
+            var row = document.createElement('tr');
+            row.innerHTML = "<td>"+data.date+"</td><td>"+data.user+"</td><td>"+data.process+"</td><td>"+data.message+"</td>";
+            tmpl_fragment.appendChild(row);
+        }
+        // console.log(document.getElementById('table-container').firstChild);
+        document.getElementById('table-container').insertBefore(tmpl_fragment, document.getElementById('table-container').firstChild);
+    }
+    return;
+}
+
 </script>
 </head>
 <body>
 
-<table>
-<tr>
-    <th>Date and Time</th>
-    <th>User</th>
-    <th>Process</th>
-    <th>Message</th>
-</tr>
+<table id='table-container'>
 </table>
+
 </body>
 </html>
