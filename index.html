@@ -70,7 +70,7 @@ function syslogFetcher(settings) {
 var slf = new syslogFetcher({
     urls: ['one', 'two', 'three'],
     success: show_in_table_fast,
-    repeat: 5,
+    repeat: 50,
 });
 
 function show_in_table(data) {
@@ -97,6 +97,18 @@ function show_in_table_fast(data) {
     }
     return;
 }
+
+
+// pseudo-code
+var socket;
+
+function websockets_connection(URL, callback) {
+    socket = new WebSocket(URL);
+    socket.send('subscribe-all-log') // Might be used to specify to a server what type of logs should only be used
+    socket.onmessage = callback;
+}
+
+websockets_connection('http://example.com/test/logs', show_in_table_fast);
 
 </script>
 </head>
